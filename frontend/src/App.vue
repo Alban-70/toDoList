@@ -1,13 +1,16 @@
 <template>
   <div class="app-container">
-    <SideBar class="sidebar" />
-    <ShowTaches class="main-content" />
+    <SideBar class="sidebar" @selectCategorie="categorieSelectionnee = $event" />
+    <ShowTaches class="main-content" :categorie="categorieSelectionnee" />
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import ShowTaches from './components/ShowTaches.vue'
 import SideBar from './components/SideBar.vue'
+
+const categorieSelectionnee = ref(null)
 </script>
 
 <style>

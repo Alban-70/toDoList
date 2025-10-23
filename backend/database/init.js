@@ -42,14 +42,14 @@ db.serialize(() => {
     ('Travail'),
     ('Courses'),
     ('Études'),
-    ('Autres')
+    ('Toutes')
   `);
 
   db.run(`INSERT INTO Tache (id_categorie, titre, description, priorite, niveau_priorite, date_echeance, statut) VALUES
-    (1, 'Aller courir', 'Faire 5 km dans le parc', 'moyenne', '2', '2025-10-25', 'à faire'),
-    (2, 'Préparer la réunion', 'Rassembler les documents pour la réunion de lundi', 'haute', '1', '2025-10-24', 'en cours'),
-    (3, 'Acheter du lait', 'Ne pas oublier le lait et le pain', 'basse', '3', '2025-10-23', 'à faire'),
-    (4, 'Réviser JavaScript', 'Faire des exercices sur les promesses et async/await', 'haute', '1', '2025-10-28', 'à faire')
+    (1, 'Aller courir', 'Faire 5 km dans le parc', 'moyenne', 2, '2025-10-25', 'à faire'),
+    (2, 'Préparer la réunion', 'Rassembler les documents pour la réunion de lundi', 'haute', 1, '2025-10-24', 'en cours'),
+    (3, 'Acheter du lait', 'Ne pas oublier le lait et le pain', 'basse', 3, '2025-10-23', 'à faire'),
+    (4, 'Réviser JavaScript', 'Faire des exercices sur les promesses et async/await', 'haute', 1, '2025-10-28', 'à faire')
   `);
 
   db.run(`INSERT INTO SousTache (id_tache, titre, statut) VALUES

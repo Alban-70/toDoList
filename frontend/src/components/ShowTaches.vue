@@ -2,6 +2,10 @@
   <div class="todolist-container">
     <h2 class="title">📋 Mes tâches</h2>
 
+    <button class="btn btn-small" @click="trierTachesPriorite">
+        Trier par priorité {{ croissant ? 'décroissante' : 'croissante' }}
+    </button>
+
     <table class="taches-table">
       <thead>
         <tr>
@@ -34,19 +38,17 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import axios from 'axios'
 
-const taches = ref([])
+const props = defineProps({
+    categorie : String
+});
 
-async function fetchTaches() {
-  try {
-    const res = await axios.get('http://localhost:3000/show_taches')
-    taches.value = res.data
-  } catch (err) {
-    console.error('Erreur lors du chargement des tâches : ', err)
-  }
-}
+const taches = ref([]);
+const croissant = ref(false);
+const ordrePriorite = ref({ basse: 1, moyenne: 2, haute: 3 });
+
 
 function formatDate(dateStr) {
   if (!dateStr) return '—'
@@ -54,14 +56,38 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-onMounted(fetchTaches)
+function trierTachesPriorite() {
+  if (!croissant.value) {
+    taches.value.sort((a, b) => ordrePriorite.value[a.priorite] - ordrePriorite.value[b.priorite]);
+    croissant.value = true;
+  } else {
+    taches.value.sort((a, b) => ordrePriorite.value[b.priorite] - ordrePriorite.value[a.priorite]);
+    croissant.value = false;
+  }
+}
+
+
+async function fetchTaches(categorie) {
+  try {
+    let url = 'http://localhost:3000/show_taches'
+    if (categorie) url += `?categorie=${categorie}`
+    const res = await axios.get(url)
+    taches.value = res.data
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+onMounted(() => fetchTaches(null))
+watch(() => props.categorie, (newVal) => fetchTaches(newVal))
 </script>
 
 <style scoped>
+/* --- CONTAINER --- */
 .todolist-container {
   max-width: 900px;
   margin: 2rem auto;
-  background: #f0f2f5; /* fond gris doux */
+  background: #f0f2f5;
   padding: 2rem;
   border-radius: 16px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
@@ -75,13 +101,48 @@ onMounted(fetchTaches)
   color: #1e293b;
 }
 
+/* --- BOUTONS --- */
+.btn {
+  display: inline-block;
+  padding: 0.6rem 1.2rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  background: #d1d5db; /* gris doux */
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* --- BOUTON PETIT --- */
+.btn-small {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+  border-radius: 8px;
+}
+
+.btn:hover {
+  background: #9ca3af; /* gris plus foncé au hover */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+}
+
+.btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  background: #6b7280; /* gris foncé */
+}
+
 /* --- TABLEAU --- */
 .taches-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
   font-size: 0.95rem;
-  background: #ffffff; /* cartes légèrement plus claires que le fond */
+  background: #ffffff;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);

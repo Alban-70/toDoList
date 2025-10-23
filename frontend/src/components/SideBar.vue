@@ -5,10 +5,13 @@
       <li 
         v-for="categorie in categories" 
         :key="categorie.id_categorie"
+        @click="selectCategorie(categorie.nom_categorie)"
+        :class="{ active: categorie.nom_categorie === selected }"
         class="categorie-item"
-      >
+        >
         {{ categorie.nom_categorie }}
-      </li>
+        </li>
+
     </ul>
   </div>
 </template>
@@ -17,7 +20,10 @@
 import { onMounted, ref } from 'vue'
 import axios from 'axios'
 
-const categories = ref([])
+const emit = defineEmits(['selectCategorie'])
+
+const categories = ref([]);
+const selected = ref(null);
 
 async function fetchCategories() {
   try {
@@ -27,6 +33,12 @@ async function fetchCategories() {
     console.error('Erreur lors du chargement des catégories : ', err)
   }
 }
+
+function selectCategorie(nom) {
+  selected.value = nom  
+  emit('selectCategorie', nom)
+}
+
 
 onMounted(fetchCategories)
 </script>
