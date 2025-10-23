@@ -29,6 +29,13 @@ async function fetchCategories() {
   try {
     const res = await axios.get('http://localhost:3000/show_categories')
     categories.value = res.data
+
+    const toutes = categories.value.find(c => c.nom_categorie.toLowerCase() === 'toutes')
+    if (toutes) {
+      selected.value = toutes.nom_categorie
+      selectCategorie(toutes.nom_categorie)
+    }
+
   } catch (err) {
     console.error('Erreur lors du chargement des catégories : ', err)
   }

@@ -1,39 +1,46 @@
 <template>
-  <div class="todolist-container">
-    <h2 class="title">📋 Mes tâches</h2>
+  <div class="show-taches-wrapper">
+    <!-- Barre de recherche alignée avec le contenu -->
+    <div class="search-container">
+      <input type="search" placeholder="Rechercher une tâche..." v-model="searchTerm" />
+    </div>
 
-    <button class="btn btn-small" @click="trierTachesPriorite">
+    <div class="todolist-container">
+      <h2 class="title">📋 Mes tâches</h2>
+
+      <button class="btn btn-small" @click="trierTachesPriorite">
         Trier par priorité {{ croissant ? 'décroissante' : 'croissante' }}
-    </button>
+      </button>
 
-    <table class="taches-table">
-      <thead>
-        <tr>
-          <th>Titre</th>
-          <th>Description</th>
-          <th>Priorité</th>
-          <th>Échéance</th>
-          <th>Statut</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr 
-          v-for="tache in taches" 
-          :key="tache.id_tache"
-          :class="tache.priorite"
-        >
-          <td class="titre">{{ tache.titre }}</td>
-          <td>{{ tache.description || '—' }}</td>
-          <td>
-            <span class="badge" :class="tache.priorite">
-              {{ tache.priorite }}
-            </span>
-          </td>
-          <td>{{ formatDate(tache.date_echeance) }}</td>
-          <td class="statut">{{ tache.statut }}</td>
-        </tr>
-      </tbody>
-    </table>
+      <table class="taches-table">
+        <thead>
+          <tr>
+            <th>Titre</th>
+            <th>Description</th>
+            <th>Priorité</th>
+            <th>Échéance</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr 
+            v-for="tache in taches" 
+            :key="tache.id_tache"
+            :class="tache.priorite"
+          >
+            <td class="titre">{{ tache.titre }}</td>
+            <td>{{ tache.description || '—' }}</td>
+            <td>
+              <span class="badge" :class="tache.priorite">
+                {{ tache.priorite }}
+              </span>
+            </td>
+            <td>{{ formatDate(tache.date_echeance) }}</td>
+            <td class="statut">{{ tache.statut }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -48,7 +55,7 @@ const props = defineProps({
 const taches = ref([]);
 const croissant = ref(false);
 const ordrePriorite = ref({ basse: 1, moyenne: 2, haute: 3 });
-
+const searchTerm = ref(''); // valeur barre de recherche
 
 function formatDate(dateStr) {
   if (!dateStr) return '—'
@@ -66,7 +73,6 @@ function trierTachesPriorite() {
   }
 }
 
-
 async function fetchTaches(categorie) {
   try {
     let url = 'http://localhost:3000/show_taches'
@@ -83,10 +89,38 @@ watch(() => props.categorie, (newVal) => fetchTaches(newVal))
 </script>
 
 <style scoped>
-/* --- CONTAINER --- */
+.show-taches-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* centre pour que la recherche soit alignée avec le contenu */
+}
+
+/* --- BARRE DE RECHERCHE --- */
+.search-container {
+  width: 100%;
+  max-width: 900px; /* même largeur que todolist-container */
+  margin: 1rem 0;
+}
+
+.search-container input {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  outline: none;
+}
+
+.search-container input:focus {
+  border-color: #94a3b8;
+  box-shadow: 0 0 5px rgba(148,163,184,0.5);
+}
+
+/* --- CONTAINER TÂCHES --- */
 .todolist-container {
   max-width: 900px;
-  margin: 2rem auto;
+  width: 100%;
   background: #f0f2f5;
   padding: 2rem;
   border-radius: 16px;
