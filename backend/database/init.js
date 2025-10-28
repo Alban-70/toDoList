@@ -41,8 +41,7 @@ db.serialize(() => {
     ('Personnel'),
     ('Travail'),
     ('Courses'),
-    ('Études'),
-    ('Toutes')
+    ('Études')
   `);
 
   db.run(`INSERT INTO Tache (id_categorie, titre, description, priorite, niveau_priorite, date_echeance, statut) VALUES

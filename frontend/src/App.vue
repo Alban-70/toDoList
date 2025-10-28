@@ -1,16 +1,17 @@
 <template>
   <div class="app-container">
-    <SideBar class="sidebar" @selectCategorie="categorieSelectionnee = $event" />
-    <ShowTaches class="main-content" :categorie="categorieSelectionnee" />
+    <SideBar v-if="route.path !== '/addTache'" class="sidebar" @selectCategorie="categorieSelectionnee = $event" />
+    <router-view class="main-content" :categorie="categorieSelectionnee" />
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import ShowTaches from './components/ShowTaches.vue'
+import { useRoute } from 'vue-router'
 import SideBar from './components/SideBar.vue'
 
 const categorieSelectionnee = ref(null)
+const route = useRoute()
 </script>
 
 <style>

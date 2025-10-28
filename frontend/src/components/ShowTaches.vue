@@ -2,7 +2,26 @@
   <div class="show-taches-wrapper">
     <!-- Barre de recherche alignée avec le contenu -->
     <div class="search-container">
-      <input type="search" placeholder="Rechercher une tâche..." v-model="searchTerm" />
+      <input
+        type="search"
+        placeholder="Rechercher une tâche..."
+        v-model="searchTaches"
+        @input="fetchTachesByName"
+      />
+
+      <!-- Résultats de recherche (flottants, sans modifier la hauteur) -->
+      <div
+        v-if="searchTaches && tachesByName.length"
+        class="search-results"
+      >
+        <div
+          v-for="tache in tachesByName"
+          :key="tache.id_tache"
+          class="search-result-item"
+        >
+          <span v-html="highlightMatch(tache.titre)"></span>
+        </div>
+      </div>
     </div>
 
     <div class="todolist-container">
@@ -11,6 +30,10 @@
       <button class="btn btn-small" @click="trierTachesPriorite">
         Trier par priorité {{ croissant ? 'décroissante' : 'croissante' }}
       </button>
+
+      <button class="btn btn-small add-task-btn" @click="ajouterTache">
+      + Ajouter une tâche
+    </button>
 
       <table class="taches-table">
         <thead>
@@ -47,15 +70,19 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
 import axios from 'axios'
+import { useRouter } from 'vue-router'
+
 
 const props = defineProps({
-    categorie : String
-});
+  categorie: String
+})
 
-const taches = ref([]);
-const croissant = ref(false);
-const ordrePriorite = ref({ basse: 1, moyenne: 2, haute: 3 });
-const searchTerm = ref(''); // valeur barre de recherche
+const router = useRouter();
+const taches = ref([])
+const tachesByName = ref([])
+const croissant = ref(false)
+const ordrePriorite = ref({ basse: 1, moyenne: 2, haute: 3 })
+const searchTaches = ref('')
 
 function formatDate(dateStr) {
   if (!dateStr) return '—'
@@ -65,18 +92,21 @@ function formatDate(dateStr) {
 
 function trierTachesPriorite() {
   if (!croissant.value) {
-    taches.value.sort((a, b) => ordrePriorite.value[a.priorite] - ordrePriorite.value[b.priorite]);
-    croissant.value = true;
+    taches.value.sort((a, b) => ordrePriorite.value[a.priorite] - ordrePriorite.value[b.priorite])
+    croissant.value = true
   } else {
-    taches.value.sort((a, b) => ordrePriorite.value[b.priorite] - ordrePriorite.value[a.priorite]);
-    croissant.value = false;
+    taches.value.sort((a, b) => ordrePriorite.value[b.priorite] - ordrePriorite.value[a.priorite])
+    croissant.value = false
   }
 }
 
-async function fetchTaches(categorie) {
+async function fetchTaches() {
   try {
-    let url = 'http://localhost:3000/show_taches'
-    if (categorie) url += `?categorie=${categorie}`
+    let url = 'http://localhost:3000/taches/show'
+    const params = []
+    if (props.categorie) params.push(`categorie=${props.categorie}`)
+    if (params.length > 0) url += '?' + params.join('&')
+
     const res = await axios.get(url)
     taches.value = res.data
   } catch (err) {
@@ -84,8 +114,36 @@ async function fetchTaches(categorie) {
   }
 }
 
-onMounted(() => fetchTaches(null))
-watch(() => props.categorie, (newVal) => fetchTaches(newVal))
+// 🔍 Recherche des tâches par nom
+async function fetchTachesByName() {
+  if (!searchTaches.value.trim()) {
+    tachesByName.value = []
+    return
+  }
+
+  try {
+    const url = 'http://localhost:3000/taches/show?titre=' + encodeURIComponent(searchTaches.value)
+    const res = await axios.get(url)
+    tachesByName.value = res.data
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+// 🔴 Met le texte recherché en rouge dans les résultats
+function highlightMatch(text) {
+  const query = searchTaches.value.trim()
+  if (!query) return text
+  const regex = new RegExp(`(${query})`, 'gi')
+  return text.replace(regex, '<span class="highlight">$1</span>')
+}
+
+function ajouterTache() {
+  router.push('/addTache');
+}
+
+onMounted(fetchTaches)
+watch(() => props.categorie, fetchTaches)
 </script>
 
 <style scoped>
@@ -93,14 +151,16 @@ watch(() => props.categorie, (newVal) => fetchTaches(newVal))
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center; /* centre pour que la recherche soit alignée avec le contenu */
+  align-items: center;
 }
 
 /* --- BARRE DE RECHERCHE --- */
 .search-container {
   width: 100%;
-  max-width: 900px; /* même largeur que todolist-container */
+  max-width: 900px;
   margin: 1rem 0;
+  position: relative;
+  z-index: 50;
 }
 
 .search-container input {
@@ -115,6 +175,39 @@ watch(() => props.categorie, (newVal) => fetchTaches(newVal))
 .search-container input:focus {
   border-color: #94a3b8;
   box-shadow: 0 0 5px rgba(148,163,184,0.5);
+}
+
+/* --- RÉSULTATS FLOTTANTS --- */
+.search-results {
+  position: absolute;
+  top: 105%;
+  left: 0;
+  width: 100%;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  max-height: 250px;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.search-result-item {
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  font-size: 0.95rem;
+  color: #334155;
+}
+
+.search-result-item:hover {
+  background: #f3f4f6;
+}
+
+/* --- MOTS EN ROUGE (corrigé avec deep) --- */
+:deep(.highlight) {
+  color: #dc2626 !important;
+  font-weight: 700;
 }
 
 /* --- CONTAINER TÂCHES --- */
@@ -135,7 +228,6 @@ watch(() => props.categorie, (newVal) => fetchTaches(newVal))
   color: #1e293b;
 }
 
-/* --- BOUTONS --- */
 .btn {
   display: inline-block;
   padding: 0.6rem 1.2rem;
@@ -143,7 +235,7 @@ watch(() => props.categorie, (newVal) => fetchTaches(newVal))
   font-size: 0.95rem;
   font-weight: 600;
   color: #1e293b;
-  background: #d1d5db; /* gris doux */
+  background: #d1d5db;
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -151,7 +243,6 @@ watch(() => props.categorie, (newVal) => fetchTaches(newVal))
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
-/* --- BOUTON PETIT --- */
 .btn-small {
   padding: 0.35rem 0.8rem;
   font-size: 0.85rem;
@@ -159,18 +250,10 @@ watch(() => props.categorie, (newVal) => fetchTaches(newVal))
 }
 
 .btn:hover {
-  background: #9ca3af; /* gris plus foncé au hover */
+  background: #9ca3af;
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.12);
 }
 
-.btn:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-  background: #6b7280; /* gris foncé */
-}
-
-/* --- TABLEAU --- */
 .taches-table {
   width: 100%;
   border-collapse: collapse;
@@ -197,13 +280,11 @@ watch(() => props.categorie, (newVal) => fetchTaches(newVal))
   vertical-align: top;
 }
 
-/* --- LIGNES SURVOL --- */
 .taches-table tr:hover {
   background: #f3f4f6;
   transition: background 0.2s ease;
 }
 
-/* --- COULEURS PRIORITÉS --- */
 .taches-table tr.basse {
   border-left: 4px solid #34d399;
 }
@@ -214,7 +295,6 @@ watch(() => props.categorie, (newVal) => fetchTaches(newVal))
   border-left: 4px solid #ef4444;
 }
 
-/* --- BADGES --- */
 .badge {
   font-size: 0.8rem;
   text-transform: capitalize;
@@ -233,7 +313,6 @@ watch(() => props.categorie, (newVal) => fetchTaches(newVal))
   background-color: #ef4444;
 }
 
-/* --- STATUT --- */
 .statut {
   font-weight: 600;
   color: #1e293b;
@@ -242,33 +321,5 @@ watch(() => props.categorie, (newVal) => fetchTaches(newVal))
 .titre {
   font-weight: 600;
   color: #0f172a;
-}
-
-/* --- RESPONSIVE --- */
-@media (max-width: 768px) {
-  .taches-table, .taches-table thead {
-    display: none;
-  }
-
-  .taches-table tr {
-    display: block;
-    margin-bottom: 1rem;
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
-    padding: 1rem;
-  }
-
-  .taches-table td {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.4rem 0;
-    border: none;
-  }
-
-  .taches-table td::before {
-    content: attr(data-label);
-    font-weight: 600;
-    color: #374151;
-  }
 }
 </style>
